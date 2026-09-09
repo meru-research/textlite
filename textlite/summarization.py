@@ -10,6 +10,8 @@ from .types import Embedder
 from .utils import cosine_similarity_matrix, cosine_similarity_to_vector, split_sentences
 
 
+embedder = None
+
 
 def _mmr_order(similarity_to_centroid: np.ndarray, pairwise_similarity: np.ndarray, diversity: float) -> List[int]:
     remaining = set(range(len(similarity_to_centroid)))
@@ -39,8 +41,7 @@ def summarize_text(
     *,
     max_sentences: int = 3,
     max_tokens: int | None = None,
-    diversity: float = 0.1,
-    embedder: Embedder | None = None,
+    diversity: float = 0.1
     token_counter: TokenCounter | None = None,
 ) -> str:
     """Sentence-BERT style extractive summarization."""
@@ -53,6 +54,8 @@ def summarize_text(
     candidates = deduped.unique_texts
     if len(candidates) <= 1:
         return candidates[0] if candidates else ""
+
+    global embedder
 
     embedder = embedder or SentenceTransformerEmbedder()
     embeddings = embedder.encode(candidates)
@@ -71,7 +74,7 @@ def summarize_text(
             continue
         chosen_indices.append(idx)
         total_tokens += sentence_tokens
-        if len(chosen_indices) >= max_sentences:
+        if max_tokens is None and len(chosen_indices) >= max_sentences:
             break
 
     if not chosen_indices:
@@ -86,10 +89,10 @@ def summarize_paragraphs(
     paragraphs: Sequence[str],
     *,
     max_sentences_per_paragraph: int = 2,
-    max_tokens: int | None = None,
-    embedder: Embedder | None = None,
+    max_tokens: int | None = None,    
     token_counter: TokenCounter | None = None,
 ) -> List[str]:
+    global embedder
     summaries: List[str] = []
     running_tokens = 0
     token_counter = token_counter or TokenCounter()
