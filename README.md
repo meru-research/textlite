@@ -10,6 +10,8 @@ style models.
 - Sentence-BERT style extractive summarization
 - Deduplication of words, phrases, sentences, or paragraphs
 - Context compression under a token budget
+- Query-aware sentence extraction under a token budget
+- Query-passage reranking with a cross-encoder model
 
 ## Install
 
@@ -21,7 +23,14 @@ pip install -e .
 ## Example
 
 ```python
-from textlite import cluster_entities, deduplicate_texts, summarize_text, compress_contexts
+from textlite import (
+    cluster_entities,
+    compress_contexts,
+    compress_query_contexts,
+    deduplicate_texts,
+    rerank_passages,
+    summarize_text,
+)
 
 entities = [
     "large language model",
@@ -46,4 +55,15 @@ compressed = compress_contexts([
     "Paragraph 1 ...",
     "Paragraph 2 ...",
 ], num_tokens=80)
+
+query_contexts = compress_query_contexts(
+    "How does retrieval augmented generation work?",
+    ["Paragraph 1 ...", "Paragraph 2 ..."],
+    num_tokens=80,
+)
+
+ranked = rerank_passages(
+    "What is the capital of France?",
+    ["Berlin is Germany's capital.", "Paris is the capital of France."],
+)
 ```
