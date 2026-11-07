@@ -13,6 +13,11 @@ style models.
 - Query-aware sentence extraction under a token budget
 - Query-passage reranking with a cross-encoder model
 
+`summarize_text(max_tokens=...)` enforces the budget on the final joined text,
+including single-sentence inputs. A sentence that cannot fit is shortened.
+Pass a `token_counter` with `count_tokens(text)` to use the generation model's
+tokenizer instead of the default approximate counter.
+
 ## Install
 
 ```bash

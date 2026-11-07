@@ -42,7 +42,23 @@ def summarize_text(
     embedder: Embedder | None = None,
     token_counter: TokenCounter | None = None,
 ) -> str:
-    """Sentence-BERT style extractive summarization."""
+    """Sentence-BERT style extractive summarization with a strict token budget."""
+
+    if max_tokens is not None and max_tokens < 1:
+        raise ValueError("max_tokens must be positive")
+    token_counter = token_counter or TokenCounter()
+
+    def fit_budget(value: str) -> str:
+        if max_tokens is None or token_counter.count_tokens(value) <= max_tokens:
+            return value
+        low, high = 0, len(value)
+        while low < high:
+            mid = (low + high + 1) // 2
+            if token_counter.count_tokens(value[:mid]) <= max_tokens:
+                low = mid
+            else:
+                high = mid - 1
+        return value[:low].rstrip()
 
     sentences = split_sentences(text)
     if not sentences:
@@ -51,7 +67,7 @@ def summarize_text(
     deduped = deduplicate_texts(sentences, threshold=0.98, embedder=embedder)
     candidates = deduped.unique_texts
     if len(candidates) <= 1:
-        return candidates[0] if candidates else ""
+        return fit_budget(candidates[0]) if candidates else ""
 
     embedder = embedder or SentenceTransformerEmbedder()
     embeddings = embedder.encode(candidates)
@@ -77,7 +93,7 @@ def summarize_text(
         chosen_indices = [order[0]]
 
     chosen_sentences = [candidates[idx] for idx in sorted(chosen_indices)]
-    return " ".join(chosen_sentences)
+    return fit_budget(" ".join(chosen_sentences))
 
 
 
